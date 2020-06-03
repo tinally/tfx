@@ -33,8 +33,6 @@ from tfx.orchestration import pipeline as tfx_pipeline
 from tfx.orchestration.kubeflow import base_component
 from tfx.orchestration.kubeflow.proto import kubeflow_pb2
 from tfx.orchestration.launcher import in_process_component_launcher
-from tfx.types import channel_utils
-from tfx.types import standard_artifacts
 
 
 class BaseComponentTest(tf.test.TestCase):
@@ -43,9 +41,7 @@ class BaseComponentTest(tf.test.TestCase):
 
   def setUp(self):
     super(BaseComponentTest, self).setUp()
-    examples = standard_artifacts.ExternalArtifact()
-    example_gen = csv_example_gen_component.CsvExampleGen(
-        input=channel_utils.as_channel([examples]))
+    example_gen = csv_example_gen_component.CsvExampleGen(input='path')
     statistics_gen = statistics_gen_component.StatisticsGen(
         examples=example_gen.outputs['examples'], instance_name='foo')
 
@@ -135,9 +131,8 @@ class BaseComponentWithPipelineParamTest(tf.test.TestCase):
     example_gen_buckets = data_types.RuntimeParameter(
         name='example-gen-buckets', ptype=int, default=10)
 
-    examples = standard_artifacts.ExternalArtifact()
     example_gen = csv_example_gen_component.CsvExampleGen(
-        input=channel_utils.as_channel([examples]),
+        input='path',
         output_config={
             'split_config': {
                 'splits': [{
@@ -244,6 +239,11 @@ class BaseComponentWithPipelineParamTest(tf.test.TestCase):
         'null',
     ]
     try:
+      print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+      print(self.example_gen.container_op
+            .arguments[:len(example_gen_expected_args)])
+      print('!!!!!!!!!!!!!-----------!!!!!!!!!!!!!!!!!')
+      print(example_gen_expected_args)
       self.assertEqual(
           self.statistics_gen.container_op
           .arguments[:len(statistics_gen_expected_args)],

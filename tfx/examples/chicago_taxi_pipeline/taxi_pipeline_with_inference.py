@@ -77,7 +77,7 @@ def _create_pipeline(pipeline_name: Text, pipeline_root: Text,
   # Brings training data into the pipeline or otherwise joins/converts
   # training data.
   training_example_gen = CsvExampleGen(
-      input_base=training_examples, instance_name='training_example_gen')
+      input=training_examples, instance_name='training_example_gen')
 
   # Computes statistics over data for visualization and example validation.
   statistics_gen = StatisticsGen(
@@ -146,11 +146,12 @@ def _create_pipeline(pipeline_name: Text, pipeline_root: Text,
 
   # Brings inference data into the pipeline.
   inference_example_gen = CsvExampleGen(
-      input_base=inference_examples,
+      input=inference_examples,
       output_config=example_gen_pb2.Output(
-          split_config=example_gen_pb2.SplitConfig(
-              splits=[example_gen_pb2.SplitConfig.Split(
-                  name='unlabelled', hash_buckets=100)])),
+          split_config=example_gen_pb2.SplitConfig(splits=[
+              example_gen_pb2.SplitConfig.Split(
+                  name='unlabelled', hash_buckets=100)
+          ])),
       instance_name='inference_example_gen')
 
   # Performs offline batch inference over inference examples.

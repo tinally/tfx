@@ -54,7 +54,7 @@ def _create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
   examples = external_input(data_root)
 
   # Brings data into the pipeline or otherwise joins/converts training data.
-  example_gen = CsvExampleGen(input_base=examples)
+  example_gen = CsvExampleGen(input=examples)
 
   hello = component.HelloComponent(
       input_data=example_gen.outputs['examples'], name=u'HelloWorld')

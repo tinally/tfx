@@ -63,8 +63,6 @@ class TaxiPipelineBeamTest(tf.test.TestCase):
   def testTaxiPipelineNewStyleCompatibility(self):
     examples = external_input('/tmp/fake/path')
     example_gen = CsvExampleGen(input=examples)
-    self.assertIs(example_gen.inputs['input'],
-                  example_gen.inputs['input_base'])
     statistics_gen = StatisticsGen(examples=example_gen.outputs['examples'])
     self.assertIs(statistics_gen.inputs['examples'],
                   statistics_gen.inputs['input_data'])
