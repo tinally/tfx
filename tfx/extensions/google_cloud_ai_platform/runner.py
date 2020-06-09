@@ -23,7 +23,7 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Text
 
-import absl
+from absl import logging
 from googleapiclient import discovery
 from googleapiclient import errors
 import tensorflow as tf
@@ -60,7 +60,6 @@ def _get_tf_runtime_version(tf_version: Text) -> Text:
 
   Args:
     tf_version: version string returned from `tf.__version__`.
-
   Returns: same major.minor version of installed tensorflow, except when
     overriden by _TF_COMPATIBILITY_OVERRIDE.
   """
@@ -121,11 +120,11 @@ def start_aip_training(input_dict: Dict[Text, List[types.Artifact]],
   training_inputs = training_inputs.copy()
 
   json_inputs = artifact_utils.jsonify_artifact_dict(input_dict)
-  absl.logging.info('json_inputs=\'{}\'.'.format(json_inputs))
+  logging.info('json_inputs=\'%s\'.', json_inputs)
   json_outputs = artifact_utils.jsonify_artifact_dict(output_dict)
-  absl.logging.info('json_outputs=\'{}\'.'.format(json_outputs))
+  logging.info('json_outputs=\'%s\'.', json_outputs)
   json_exec_properties = json.dumps(exec_properties, sort_keys=True)
-  absl.logging.info('json_exec_properties=\'{}\'.'.format(json_exec_properties))
+  logging.info('json_exec_properties=\'%s\'.', json_exec_properties)
 
   # Configure AI Platform training job
   api_client = discovery.build('ml', 'v1')
@@ -165,9 +164,8 @@ def start_aip_training(input_dict: Dict[Text, List[types.Artifact]],
   }
 
   # Submit job to AIP Training
-  absl.logging.info(
-      'Submitting job=\'{}\', project=\'{}\' to AI Platform.'.format(
-          job_id, project))
+  logging.info('Submitting job=\'%s\', project=\'%s\' to AI Platform.', job_id,
+               project)
   request = api_client.projects().jobs().create(
       body=job_spec, parent=project_id)
   request.execute()
@@ -178,16 +176,27 @@ def start_aip_training(input_dict: Dict[Text, List[types.Artifact]],
   response = request.execute()
   while response['state'] not in ('SUCCEEDED', 'FAILED'):
     time.sleep(_POLLING_INTERVAL_IN_SECONDS)
-    response = request.execute()
+    try:
+      response = request.execute()
+    # Handle transient connection error. An OSError will be caught here for the
+    # sake of Py2 compatibility (where BrokenPipeError is not builtin).
+    except OSError as err:
+      logging.warning(
+          'OSError (%s) encountered when polling job: %s. Trying to '
+          'recreate the API client.', err, job_id)
+      # Recreate the Python API client.
+      api_client = discovery.build('ml', 'v1')
+      request = api_client.projects().jobs().get(name=job_name)
+      continue
 
   if response['state'] == 'FAILED':
     err_msg = 'Job \'{}\' did not succeed.  Detailed response {}.'.format(
         job_name, response)
-    absl.logging.error(err_msg)
+    logging.error(err_msg)
     raise RuntimeError(err_msg)
 
   # AIP training complete
-  absl.logging.info('Job \'{}\' successful.'.format(job_name))
+  logging.info('Job \'%s\' successful.', job_name)
 
 
 def deploy_model_for_aip_prediction(
@@ -210,9 +219,9 @@ def deploy_model_for_aip_prediction(
   Raises:
     RuntimeError: if an error is encountered when trying to push.
   """
-  absl.logging.info(
-      'Deploying to model with version {} to AI Platform for serving: {}'
-      .format(model_version, ai_platform_serving_args))
+  logging.info(
+      'Deploying to model with version %s to AI Platform for serving: %s',
+      model_version, ai_platform_serving_args)
 
   model_name = ai_platform_serving_args['model_name']
   project_id = ai_platform_serving_args['project_id']
@@ -231,7 +240,7 @@ def deploy_model_for_aip_prediction(
     # If the error is to create an already existing model, it's ok to ignore.
     # TODO(b/135211463): Remove the disable once the pytype bug is fixed.
     if e.resp.status == 409:  # pytype: disable=attribute-error
-      absl.logging.warn('Model {} already exists'.format(model_name))
+      logging.warn('Model %s already exists', model_name)
     else:
       raise RuntimeError('AI Platform Push failed: {}'.format(e))
   with telemetry_utils.scoped_labels(
@@ -254,7 +263,7 @@ def deploy_model_for_aip_prediction(
   deploy_status_resc = api.projects().operations().get(name=op_name)
   while not deploy_status_resc.execute().get('done'):
     time.sleep(_POLLING_INTERVAL_IN_SECONDS)
-    absl.logging.info('Model still being deployed...')
+    logging.info('Model still being deployed...')
 
   deploy_status = deploy_status_resc.execute()
 
@@ -267,10 +276,9 @@ def deploy_model_for_aip_prediction(
   # Set the new version as default.
   # By API specification, if Long-Running-Operation is done and there is
   # no error, 'response' is guaranteed to exist.
-  api.projects().models().versions().setDefault(
-      name='{}/versions/{}'.format(model_name, deploy_status['response']
-                                   ['name'])).execute()
+  api.projects().models().versions().setDefault(name='{}/versions/{}'.format(
+      model_name, deploy_status['response']['name'])).execute()
 
-  absl.logging.info(
-      'Successfully deployed model {} with version {}, serving from {}'.format(
-          model_name, model_version, serving_path))
+  logging.info(
+      'Successfully deployed model %s with version %s, serving from %s',
+      model_name, model_version, serving_path)
