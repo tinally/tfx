@@ -71,14 +71,10 @@ class ExecutorTest(tf.test.TestCase):
 
   def _testDo(self, payload_format):
     exec_properties = {
-        utils.INPUT_BASE_KEY:
-            self._input_data_dir,
-        utils.INPUT_CONFIG_KEY:
-            self._input_config,
-        utils.OUTPUT_CONFIG_KEY:
-            self._output_config,
-        utils.OUTPUT_DATA_FORMAT_KEY:
-            payload_format,
+        utils.INPUT_BASE_KEY: self._input_data_dir,
+        utils.INPUT_CONFIG_KEY: self._input_config,
+        utils.OUTPUT_CONFIG_KEY: self._output_config,
+        utils.OUTPUT_DATA_FORMAT_KEY: payload_format,
     }
 
     output_data_dir = os.path.join(
@@ -132,8 +128,8 @@ class ExecutorTest(tf.test.TestCase):
   def testDoWithSequenceExamples(self):
     self._input_config = json_format.MessageToJson(
         example_gen_pb2.Input(splits=[
-            example_gen_pb2.Input.Split(name='tfrecord_sequence',
-                                        pattern='tfrecord_sequence/*'),
+            example_gen_pb2.Input.Split(
+                name='tfrecord_sequence', pattern='tfrecord_sequence/*'),
         ]),
         preserving_proto_field_name=True)
 

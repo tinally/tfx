@@ -75,6 +75,9 @@ enum PayloadFormat {
   // Serialized tf.train.SequenceExample protocol buffer.
   FORMAT_TF_SEQUENCE_EXAMPLE = 7;
 
+  // Serialized tf.train.SequenceExample protocol buffer.
+  FORMAT_TF_SEQUENCE_EXAMPLE = 7;
+
   // Serialized any protocol buffer.
   FORMAT_PROTO = 11;
 

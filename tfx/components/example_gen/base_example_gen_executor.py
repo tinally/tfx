@@ -40,10 +40,9 @@ from tfx.types import artifact_utils
 DEFAULT_FILE_NAME = 'data_tfrecord'
 
 
-def _GeneratePartitionKey(
-    record: Union[tf.train.Example, tf.train.SequenceExample, bytes],
-    split_config: example_gen_pb2.SplitConfig
-) -> bytes:
+def _GeneratePartitionKey(record: Union[tf.train.Example,
+                                        tf.train.SequenceExample, bytes],
+                          split_config: example_gen_pb2.SplitConfig) -> bytes:
   """Generates key for partition."""
 
   if not split_config.HasField('partition_feature_name'):
@@ -52,9 +51,9 @@ def _GeneratePartitionKey(
     return record.SerializeToString(deterministic=True)
 
   if isinstance(record, tf.train.Example):
-    features = record.features.feature
+    features = record.features.feature  # pytype: disable=attribute-error
   elif isinstance(record, tf.train.SequenceExample):
-    features = record.context.feature
+    features = record.context.feature  # pytype: disable=attribute-error
   else:
     raise RuntimeError('Split by `partition_feature_name` is only supported '
                        'for FORMAT_TF_EXAMPLE and FORMAT_TF_SEQUENCE_EXAMPLE '
@@ -94,8 +93,7 @@ def _PartitionFn(
 
 @beam.ptransform_fn
 @beam.typehints.with_input_types(Union[tf.train.Example,
-                                       tf.train.SequenceExample,
-                                       bytes])
+                                       tf.train.SequenceExample, bytes])
 @beam.typehints.with_output_types(beam.pvalue.PDone)
 def _WriteSplit(example_split: beam.pvalue.PCollection,
                 output_split_path: Text) -> beam.pvalue.PDone:
@@ -208,7 +206,7 @@ class BaseExampleGenExecutor(
     # Make beam_pipeline_args available in exec_properties since certain
     # example_gen executors need this information.
     # TODO(b/155441037): Revisit necessity of this when BigQueryExampleGen
-    # does not branch on project or runner anymore.
+    # does not branch on runner anymore.
     exec_properties['_beam_pipeline_args'] = self._beam_pipeline_args or []
 
     example_splits = []

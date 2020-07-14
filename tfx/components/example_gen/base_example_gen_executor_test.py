@@ -56,13 +56,11 @@ def _TestInputSourceToExamplePTransform(pipeline, exec_properties,
 
     if exec_properties.get('sequence_example', False):
       feature_list = {}
-      features = [bytes_list_feature]
-      feature_list['s'] = tf.train.FeatureList(feature=features)
+      feature_list['list'] = tf.train.FeatureList(feature=[feature['s']])
       example_proto = tf.train.SequenceExample(
           context=tf.train.Features(feature=feature),
           feature_lists=tf.train.FeatureLists(feature_list=feature_list))
     else:
-      feature['s'] = bytes_list_feature
       example_proto = tf.train.Example(
           features=tf.train.Features(feature=feature))
 
@@ -112,13 +110,12 @@ class BaseExampleGenExecutorTest(tf.test.TestCase):
         utils.OUTPUT_CONFIG_KEY:
             json_format.MessageToJson(
                 example_gen_pb2.Output(
-                    split_config=example_gen_pb2.SplitConfig(
-                        splits=[
-                            example_gen_pb2.SplitConfig.Split(
-                                name='train', hash_buckets=2),
-                            example_gen_pb2.SplitConfig.Split(
-                                name='eval', hash_buckets=1)
-                        ])))
+                    split_config=example_gen_pb2.SplitConfig(splits=[
+                        example_gen_pb2.SplitConfig.Split(
+                            name='train', hash_buckets=2),
+                        example_gen_pb2.SplitConfig.Split(
+                            name='eval', hash_buckets=1)
+                    ])))
     }
 
   def _testDo(self):

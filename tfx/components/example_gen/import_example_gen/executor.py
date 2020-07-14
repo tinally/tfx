@@ -70,10 +70,8 @@ class Executor(base_example_gen_executor.BaseExampleGenExecutor):
     @beam.ptransform_fn
     @beam.typehints.with_input_types(beam.Pipeline)
     @beam.typehints.with_output_types(Union[tf.train.Example,
-                                            tf.train.SequenceExample,
-                                            bytes])
-    def ImportRecord(pipeline: beam.Pipeline,
-                     exec_properties: Dict[Text, Any],
+                                            tf.train.SequenceExample, bytes])
+    def ImportRecord(pipeline: beam.Pipeline, exec_properties: Dict[Text, Any],
                      split_pattern: Text) -> beam.pvalue.PCollection:
       """PTransform to import records.
 
