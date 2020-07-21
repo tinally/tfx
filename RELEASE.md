@@ -7,7 +7,8 @@
 *   Changed Span information as a property of ExampleGen's output artifact.
     Deprecated ExampleGen input (external) artifact.
 *   Added ModelRun artifact for Trainer for storing training related files,
-    e.g., Tensorboard logs.
+    e.g., Tensorboard logs. Trainer's Model artifact now only contain pure
+    models (check utils/path_utils.py for details).
 *   Added support for `tf.train.SequenceExample` in ExampleGen:
     *   ImportExampleGen now supports `tf.train.SequenceExample` importing.
     *   base_example_gen_executor now supports `tf.train.SequenceExample` as
@@ -17,6 +18,7 @@
 *   Switched Transform component to use the new TFXIO code path. Users may
     potentially notice large performance improvement.
 *   Added support for primitive artifacts to InputValuePlaceholder.
+*   Supported multiple artifacts for Trainer's input example Channel.
 
 ## Bug fixes and other changes
 *   Added Tuner component to Iris e2e example.
@@ -32,6 +34,7 @@
 *   Used thread local storage for `label_utils.scoped_labels()` to make it
     thread safe.
 *   Stopped requiring `avro-python3`.
+*   Requires [Bazel](https://bazel.build/) to build TFX source code.
 
 ## Breaking changes
 
