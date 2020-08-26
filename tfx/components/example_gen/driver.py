@@ -20,9 +20,8 @@ from __future__ import print_function
 
 import os
 from typing import Any, Dict, List, Text
-from absl import logging
 
-from google.protobuf import json_format
+from absl import logging
 from tfx import types
 from tfx.components.base import base_driver
 from tfx.components.example_gen import utils
@@ -30,6 +29,8 @@ from tfx.orchestration import data_types
 from tfx.proto import example_gen_pb2
 from tfx.types import artifact_utils
 from tfx.types import channel_utils
+
+from google.protobuf import json_format
 
 
 class Driver(base_driver.BaseDriver):
@@ -55,12 +56,13 @@ class Driver(base_driver.BaseDriver):
     logging.debug('Processing input %s.', input_base)
 
     # Note that this function updates the input_config.splits.pattern.
-    fingerprint, select_span = utils.calculate_splits_fingerprint_and_span(
+    fingerprint, span, version = utils.calculate_splits_fingerprint_span_and_version(
         input_base, input_config.splits)
 
     exec_properties[utils.INPUT_CONFIG_KEY] = json_format.MessageToJson(
         input_config, sort_keys=True, preserving_proto_field_name=True)
-    exec_properties[utils.SPAN_PROPERTY_NAME] = select_span
+    exec_properties[utils.SPAN_PROPERTY_NAME] = span
+    exec_properties[utils.VERSION_PROPERTY_NAME] = version
     exec_properties[utils.FINGERPRINT_PROPERTY_NAME] = fingerprint
 
     return exec_properties
@@ -92,7 +94,13 @@ class Driver(base_driver.BaseDriver):
         utils.FINGERPRINT_PROPERTY_NAME,
         exec_properties[utils.FINGERPRINT_PROPERTY_NAME])
     example_artifact.set_string_custom_property(
-        utils.SPAN_PROPERTY_NAME, exec_properties[utils.SPAN_PROPERTY_NAME])
+        utils.SPAN_PROPERTY_NAME,
+        str(exec_properties[utils.SPAN_PROPERTY_NAME]))
+    # TODO(b/162622803): add default behavior for when version spec not present.
+    if exec_properties[utils.VERSION_PROPERTY_NAME]:
+      example_artifact.set_string_custom_property(
+          utils.VERSION_PROPERTY_NAME,
+          str(exec_properties[utils.VERSION_PROPERTY_NAME]))
 
     base_driver._prepare_output_paths(example_artifact)  # pylint: disable=protected-access
 
